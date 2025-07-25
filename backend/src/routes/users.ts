@@ -109,6 +109,17 @@ router.put("/me", authenticateToken, async (req: AuthRequest, res: Response) => 
         youtube_url: updateData.youtube_url
       }
       updatedUser = await updateUser(req.userId!, updatedDataSubset);
+      if (updatedUser) {
+        updatedUser = {
+          name: updatedUser.name,
+          date_of_birth: updatedUser.date_of_birth,
+          post_address: updatedUser.post_address,
+          home_address: updatedUser.home_address,
+          facebook_url: updatedUser.facebook_url,
+          twitter_url: updatedUser.twitter_url,
+          youtube_url: updatedUser.youtube_url
+        }
+      }
     }
 
     if (!updatedUser) {
