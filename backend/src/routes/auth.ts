@@ -1,7 +1,10 @@
 import express, { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { getUserByEmail } from "../database";
-import { generateToken } from "../middleware/auth";
+import { getUserByEmail, getUserById } from "../database";
+import { authenticateToken, generateToken, AuthRequest } from "../middleware/auth";
+import { VerifyCodeSchema } from "../module/model";
+import { validate } from "../middleware/validation";
+import { getAuthCode, setAuthCode, setAuthenticatedAdditionalInfo } from "../module/authCodes";
 
 const router = express.Router();
 
@@ -47,6 +50,52 @@ router.post("/login", async (req: Request, res: Response) => {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+router.post("/request-code", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await getUserById(req.userId!);
+
+    if (user) {
+      setAuthCode(user.id)
+    }
+
+    res.sendStatus(201)
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Error generating code:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/verify-code", authenticateToken, validate(null, null, VerifyCodeSchema), async (req: AuthRequest, res: Response) => {
+  try {
+    if (typeof req.userId !== 'number') {
+      throw new Error('Unable to get user id')
+    }
+
+    const { code } = VerifyCodeSchema.parse(req.body)
+
+    let authCodeEntry = getAuthCode(req.userId);
+
+    if (authCodeEntry && authCodeEntry.code === code) {
+      const user = await getUserById(req.userId);
+      const token = generateToken(req.userId);
+      setAuthenticatedAdditionalInfo(req.userId);
+
+      res.json({
+        user: user,
+        token,
+      });
+    } else {
+      res.sendStatus(401);
+    }
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Auth code verify error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -3,6 +3,7 @@ import { apiService } from "../services/api";
 import AddressSection from "./AddressSection";
 import ContactSection from "./ContactSection";
 import BankingSection from "./BankingSection";
+import AdditionalInfoUnlockSection from "./AdditionalInfoUnlockSection"
 import SocialLinksSection from "./SocialLinksSection";
 
 const UserProfile: React.FC = () => {
@@ -17,33 +18,33 @@ const UserProfile: React.FC = () => {
   const [personalDay, setPersonalDay] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userData = await apiService.getCurrentUser();
-        setUser(userData);
-        setPersonalName(userData.name || "");
-        
-        // Parse date_of_birth into separate components
-        if (userData.date_of_birth) {
-          const [year, month, day] = userData.date_of_birth.split("-");
-          setPersonalYear(year || "");
-          setPersonalMonth(month || "");
-          setPersonalDay(day || "");
-        } else {
-          setPersonalYear("");
-          setPersonalMonth("");
-          setPersonalDay("");
-        }
-        
-        setError(null);
-      } catch {
-        setError("Failed to load user data");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUser = async () => {
+    try {
+      const userData = await apiService.getCurrentUser();
+      setUser(userData);
+      setPersonalName(userData.name || "");
 
+      // Parse date_of_birth into separate components
+      if (userData.date_of_birth) {
+        const [year, month, day] = userData.date_of_birth.split("-");
+        setPersonalYear(year || "");
+        setPersonalMonth(month || "");
+        setPersonalDay(day || "");
+      } else {
+        setPersonalYear("");
+        setPersonalMonth("");
+        setPersonalDay("");
+      }
+
+      setError(null);
+    } catch {
+      setError("Failed to load user data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUser();
   }, []);
 
@@ -74,7 +75,7 @@ const UserProfile: React.FC = () => {
       setUser(updatedUser);
       setSuccess("Section updated successfully!");
       setError(null);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch {
@@ -90,7 +91,7 @@ const UserProfile: React.FC = () => {
       if (personalYear && personalMonth && personalDay) {
         dateOfBirth = `${personalYear}-${personalMonth.padStart(2, "0")}-${personalDay.padStart(2, "0")}`;
       }
-      
+
       await handleSectionSave({
         name: personalName,
         date_of_birth: dateOfBirth,
@@ -105,7 +106,7 @@ const UserProfile: React.FC = () => {
 
   const handlePersonalCancel = () => {
     setPersonalName(user?.name || "");
-    
+
     // Reset date components
     if (user?.date_of_birth) {
       const [year, month, day] = user.date_of_birth.split("-");
@@ -117,7 +118,7 @@ const UserProfile: React.FC = () => {
       setPersonalMonth("");
       setPersonalDay("");
     }
-    
+
     setIsEditingPersonal(false);
   };
 
@@ -156,6 +157,9 @@ const UserProfile: React.FC = () => {
     return days;
   };
 
+  const unlockAdditionalInfo = () => {
+    fetchUser();
+  };
 
   if (loading) {
     return <div className="loading">Loading user profile...</div>;
@@ -267,9 +271,12 @@ const UserProfile: React.FC = () => {
         )}
       </div>
 
-      <ContactSection user={user} onSave={handleSectionSave} />
+      {/* Conditions for rendering unlock section aren't ideal, just uses an existing property in the user state */}
+      {user.email !== undefined && <ContactSection user={user} onSave={handleSectionSave} />}
+      {user.email === undefined && <AdditionalInfoUnlockSection onUnlockSuccess={unlockAdditionalInfo} title={'Contact Information'} />}
       <AddressSection user={user} onSave={handleSectionSave} />
-      <BankingSection user={user} onSave={handleSectionSave} />
+      {user.bank_name !== undefined && <BankingSection user={user} onSave={handleSectionSave} />}
+      {user.bank_name === undefined && <AdditionalInfoUnlockSection onUnlockSuccess={unlockAdditionalInfo} title={'Banking Information'} />}
       <SocialLinksSection user={user} onSave={handleSectionSave} />
     </div>
   );

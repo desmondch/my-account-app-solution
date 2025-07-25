@@ -24,24 +24,30 @@ export interface User {
   updated_at: string;
 }
 
+
 export interface SafeUser {
   id: number;
   name: string;
-  email: string;
   date_of_birth: string | null;
-  phone_number: string | null;
   post_address: string | null;
   home_address: string | null;
-  bank_name: string | null;
-  bsb: string | null;
-  account_name: string | null;
-  account_number: string | null;
   facebook_url: string | null;
   twitter_url: string | null;
   youtube_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
+
+export interface SafeUserFullInfo extends SafeUser {
+  email: string;
+  phone_number: string | null;
+  bank_name: string | null;
+  bsb: string | null;
+  account_name: string | null;
+  account_number: string | null;
+}
+
 
 export interface UserUpdateData {
   name?: string;
@@ -62,7 +68,7 @@ export interface UserUpdateData {
 export function initializeDatabase(): void {
   const schema = readFileSync(join(__dirname, "..", "database", "schema.sql"), "utf8");
   db.exec(schema);
-  
+
   const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
   if (userCount.count === 0) {
     const seedData = readFileSync(join(__dirname, "..", "database", "seed.sql"), "utf8");
@@ -70,17 +76,35 @@ export function initializeDatabase(): void {
   }
 }
 
-export async function getUserById(id: number): Promise<SafeUser | null> {
+// email,
+// phone_number,
+// -- Banking section
+// bank_name TEXT,
+// bsb TEXT,
+// account_name TEXT,
+// account_number TEXT,
+// id,
+// name,
+// date_of_birth,
+// post_address,
+// home_address,
+// facebook_url,
+// twitter_url,
+// youtube_url,
+// created_at,
+// updated_at
+export async function getUserById(id: number): Promise<SafeUserFullInfo | null> {
   try {
-    const user = db.prepare(`SELECT * FROM users WHERE id = ${id}`).get() as User | null;
+    const user = db.prepare(`SELECT * FROM users WHERE id = ?`).get([id]) as User | null;
+
     if (!user) {
       return null;
     }
-    
+
     // Remove password from response
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...safeUser } = user;
-    return safeUser as SafeUser;
+    return safeUser as SafeUserFullInfo;
   } catch (error) {
     console.error("Error getting user by ID:", error);
     throw error;
@@ -89,7 +113,7 @@ export async function getUserById(id: number): Promise<SafeUser | null> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
-    return db.prepare(`SELECT * FROM users WHERE email = '${email}'`).get() as User | null;
+    return db.prepare(`SELECT * FROM users WHERE email = ?`).get([email]) as User | null;
   } catch (error) {
     console.error("Error getting user by email:", error);
     throw error;
@@ -100,21 +124,21 @@ export async function updateUser(id: number, data: UserUpdateData): Promise<Safe
   try {
     const fields = Object.keys(data)
       .filter(key => data[key as keyof UserUpdateData] !== undefined)
-    
+
     if (fields.length === 0) {
       return await getUserById(id);
     }
-    
+
     const setClause = fields.map(field => `${field} = ?`).join(", ");
     const values = fields.map(field => data[field as keyof UserUpdateData]);
-    
+
     const stmt = db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`);
     const result = stmt.run(...values, id);
-    
+
     if (result.changes === 0) {
       return null;
     }
-    
+
     return await getUserById(id);
   } catch (error) {
     console.error("Error updating user:", error);

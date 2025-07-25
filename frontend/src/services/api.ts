@@ -37,6 +37,24 @@ export const apiService = {
     return data;
   },
 
+  async verifyCode(code: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ code }),
+    });
+    if (!response.ok) {
+      throw new Error("Invalid code");
+    }
+
+    const data = await response.json();
+    localStorage.setItem("auth_token", data.token);
+    return data;
+  },
+
   async getCurrentUser() {
     const response = await fetch(`${API_BASE_URL}/users/me`, {
       headers: getAuthHeaders(),
@@ -57,6 +75,17 @@ export const apiService = {
       throw new Error("Failed to update user");
     }
     return response.json();
+  },
+
+  async requestCode() {
+    const response = await fetch(`${API_BASE_URL}/auth/request-code`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch user");
+    }
+    return;
   },
 
   logout(): void {

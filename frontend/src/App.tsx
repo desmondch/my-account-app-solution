@@ -6,6 +6,7 @@ import "./styles/App.css";
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAllowedAdditionalInfo, setIsAllowedAdditionalInfo] = useState(false);
   const [loading,   setLoading] = useState(true);
 
   useEffect(() => {
