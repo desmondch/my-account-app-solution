@@ -76,23 +76,7 @@ export function initializeDatabase(): void {
   }
 }
 
-// email,
-// phone_number,
-// -- Banking section
-// bank_name TEXT,
-// bsb TEXT,
-// account_name TEXT,
-// account_number TEXT,
-// id,
-// name,
-// date_of_birth,
-// post_address,
-// home_address,
-// facebook_url,
-// twitter_url,
-// youtube_url,
-// created_at,
-// updated_at
+
 export async function getUserById(id: number): Promise<SafeUserFullInfo | null> {
   try {
     const user = db.prepare(`SELECT * FROM users WHERE id = ?`).get([id]) as User | null;

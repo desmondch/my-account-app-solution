@@ -71,6 +71,11 @@ router.post("/request-code", authenticateToken, async (req: AuthRequest, res: Re
   }
 });
 
+
+// Could be stored in an env instead
+const AUTH_CODE_MAX_TIME_DIFF = 300_000;
+
+
 router.post("/verify-code", authenticateToken, validate(null, null, VerifyCodeSchema), async (req: AuthRequest, res: Response) => {
   try {
     if (typeof req.userId !== 'number') {
@@ -81,7 +86,8 @@ router.post("/verify-code", authenticateToken, validate(null, null, VerifyCodeSc
 
     let authCodeEntry = getAuthCode(req.userId);
 
-    if (authCodeEntry && authCodeEntry.code === code) {
+    let currTime = new Date().getTime();
+    if (authCodeEntry && authCodeEntry.code === code && currTime - authCodeEntry.generatedAt.getTime() <= AUTH_CODE_MAX_TIME_DIFF) {
       const user = await getUserById(req.userId);
       const token = generateToken(req.userId);
       setAuthenticatedAdditionalInfo(req.userId);

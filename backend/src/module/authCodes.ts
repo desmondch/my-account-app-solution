@@ -32,7 +32,7 @@ export function setAuthCode(id: number): void {
         attempted: 0
     };
 
-    console.log(`[${currDate.toISOString()}] Generated code: ${newCodeEntry.code}`);
+    console.log(`[${currDate.toISOString()}] Generated code for user id: ${id}, ${newCodeEntry.code}`);
 
     requestCodes.set(id, newCodeEntry);
 }
